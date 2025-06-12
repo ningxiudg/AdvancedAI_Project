@@ -78,7 +78,7 @@
             font-weight: 600;
         }
 
-        input[type="email"] {
+        input[type="text"] {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid var(--border);
@@ -87,7 +87,7 @@
             transition: border-color 0.3s;
         }
 
-        input[type="email"]:focus {
+        input[type="text"]:focus {
             outline: none;
             border-color: var(--normal);
             box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
@@ -459,8 +459,8 @@
 
         <div class="input-area">
             <div class="form-group">
-                <label for="emailInput">请输入邮箱地址</label>
-                <input type="email" id="emailInput" placeholder="example@domain.com" value="agentTest0514@163.com">
+                <label for="emailInput">请输入邮箱Cookie</label>
+                <input type="text" id="emailInput" placeholder="example@domain.com">
             </div>
 
             <button class="btn btn-primary" id="processBtn">
@@ -552,13 +552,15 @@
                 try {
                     // 1. 生成报告请求
                     const email = document.getElementById('emailInput').value.trim();
-                    if (!email || !validateEmail(email)) {
-                        throw new Error('邮箱格式不正确');
-                    }
+                    // if (!email || !validateEmail(email)) {
+                        // throw new Error('邮箱格式不正确');
+                    // }
 
                     const generateResponse = await fetch('http://127.0.0.1:5001/generate_reports', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify({
                             email: email,
                             prompt: "请分类这些邮件并标记优先级"
@@ -645,7 +647,6 @@
                 successMessage.style.display = 'none';
                 processBtn.disabled = true;
             }
-
-
-
         </script>
+    </div>
+</body>

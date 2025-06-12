@@ -7,11 +7,25 @@ from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
 from typing import List, Dict, Union
+from mail import mail_main
 
 app = Flask(__name__)
 CORS(app)  # 这将允许所有域的跨域请求
 # 初始化Flask应用
 app = Flask(__name__, template_folder="templates", static_folder="static")
+
+CORS(app, origins=["http://192.168.43.157:5001"],
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"],
+     supports_credentials=True,
+     max_age=3600)
+
+@app.after_request
+def after_request(response):
+    if 'Connection' in response.headers:
+        del response.headers['Connection']
+    response.headers['Connection'] = 'keep-alive'
+    return response
 
 # OpenAI客户端配置
 client = OpenAI(
@@ -73,17 +87,22 @@ def process_emails():
 
 
 @app.route("/generate_reports", methods=["POST"])
-def generate_reports_route():
+def generate_reports():
     try:
         data = request.json
-        email = data.get("email", "")
+        email = data.get("email")
+        cookie = data.get("email")
         prompt = data.get("prompt", "请分类这些邮件并标记优先级")
+        email_list = mail_main(cookie)
 
-        saved_result = load_saved_result(OUTPUT_DIR, email, prompt)
+        saved_result = None
+        # saved_result = load_saved_result(OUTPUT_DIR, email, prompt)
         if saved_result is not None:
             result = saved_result  # 直接使用历史结果
         else:
             # 无历史结果，调用核心函数生成新结果
+            email_list = mail_main(cookie)
+            # todo
             result = generate_all_reports(EMAIL_DATA, prompt, OUTPUT_DIR)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
