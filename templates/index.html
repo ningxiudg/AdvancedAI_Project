@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮箱邮件处理助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        :root {
+            --urgent: #ff6b6b;
+            --high: #ff9e58;
+            --normal: #4dabf7;
+            --low: #adb5bd;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #343a40;
+            --border: #e9ecef;
+            --success: #40c057;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h1 i {
+            color: var(--normal);
+        }
+
+        .input-area {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="email"]:focus {
+            outline: none;
+            border-color: var(--normal);
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
+        }
+
+        .txt-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: var(--normal);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--low);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stats-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-card h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        .priority-section {
+            margin-bottom: 30px;
+        }
+
+        .priority-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .urgent-bg {
+            background: var(--urgent);
+        }
+
+        .high-bg {
+            background: var(--high);
+        }
+
+        .normal-bg {
+            background: var(--normal);
+        }
+
+        .mail-card {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .mail-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .urgent-card {
+            border-left-color: var(--urgent);
+        }
+
+        .high-card {
+            border-left-color: var(--high);
+        }
+
+        .normal-card {
+            border-left-color: var(--normal);
+        }
+
+        .mail-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .sender {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .subject {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .advice {
+            background: rgba(233, 236, 239, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 15px;
+        }
+
+        .advice-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--card);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .timeline-badge {
+            min-width: 32px;
+            height: 32px;
+            background: var(--normal);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 12px;
+            overflow: hidden;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px;
+            background: var(--normal);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #e67700;
+        }
+
+        .status-done {
+            background: rgba(40, 167, 69, 0.2);
+            color: #2b8a3e;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--normal);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: none;
+            background: rgba(255, 107, 107, 0.1);
+            color: #c92a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid var(--urgent);
+        }
+
+        .success-message {
+            display: none;
+            background: rgba(64, 192, 87, 0.1);
+            color: #2b8a3e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid var(--success);
+        }
+
+        .report-summary {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .report-summary h2 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .report-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .report-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-mail-bulk"></i> 邮箱邮件处理助手</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i> 刷新</button>
+            </div>
+        </header>
+
+        <div class="input-area">
+            <div class="form-group">
+                <label for="emailInput">请输入邮箱地址</label>
+                <input type="email" id="emailInput" placeholder="example@domain.com" value="agentTest0514@163.com">
+            </div>
+
+            <button class="btn btn-primary" id="processBtn">
+                <i class="fas fa-cogs"></i> 处理邮箱邮件
+            </button>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
+            </div>
+
+            <div class="success-message" id="successMessage">
+                <i class="fas fa-check-circle"></i> 邮件处理完成！已成功分析 <span id="emailCount">5</span> 封邮件
+            </div>
+
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p>正在处理邮箱邮件，请稍候...</p>
+            </div>
+        </div>
+
+
+        <div class="report-container">
+            <div class="success-message" id="success-message"></div>
+            <div class="error-message" id="error-message"></div>
+            <pre id="txt-content" class="txt-content"></pre>
+        </div>
+
+
+
+
+
+
+
+        <script>
+            // DOM元素
+            const emailInput = document.getElementById('emailInput');
+            const processBtn = document.getElementById('processBtn');
+            const loader = document.getElementById('loader');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const successMessage = document.getElementById('successMessage');
+            const emailCount = document.getElementById('emailCount');
+            const mailModal = document.getElementById('mailModal');
+            const markDoneBtn = document.getElementById('markDoneBtn');
+
+            // 邮件数据
+            let currentMailId = null;
+
+            // 初始化页面
+            document.addEventListener('DOMContentLoaded', () => {
+                // 绑定模态框事件
+                closeModalBtn.addEventListener('click', () => {
+                    mailModal.style.display = 'none';
+                });
+
+                markDoneBtn.addEventListener('click', () => {
+                    if (currentMailId) {
+                        markMailAsDone(currentMailId);
+                    }
+                });
+
+                // 点击模态框外部关闭
+                mailModal.addEventListener('click', (e) => {
+                    if (e.target === mailModal) {
+                        mailModal.style.display = 'none';
+                    }
+                });
+            });
+
+
+            // 刷新按钮
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                if (emailInput.value.trim()) {
+                    processBtn.click();
+                }
+            });
+            async function fetchTxtContent() {
+                const loader = document.getElementById('loader');
+                const errorMsg = document.getElementById('error-message');
+                const successMsg = document.getElementById('success-message');
+                const txtContentDiv = document.getElementById('txt-content');
+
+                // 重置UI状态
+                loader.style.display = 'block';
+                errorMsg.style.display = 'none';
+                successMsg.style.display = 'none';
+                txtContentDiv.innerHTML = '';
+
+                try {
+                    // 1. 生成报告请求
+                    const email = document.getElementById('emailInput').value.trim();
+                    if (!email || !validateEmail(email)) {
+                        throw new Error('邮箱格式不正确');
+                    }
+
+                    const generateResponse = await fetch('http://127.0.0.1:5001/generate_reports', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: email,
+                            prompt: "请分类这些邮件并标记优先级"
+                        })
+                    });
+
+
+                    if (!generateResponse.ok) {
+                        const httpError = `HTTP错误! 状态码: ${generateResponse.status}`;
+                        throw new Error(httpError);
+                    }
+
+                    const generateData = await generateResponse.json();
+
+                    // 业务逻辑错误处理
+                    if (generateData.status !== 'success') {
+                        throw new Error(generateData.message || '报告生成失败');
+                    }
+
+                    // 2. 获取文本内容
+                    // 安全处理：从路径中提取文件名
+                    const txtPath = generateData.files.text;
+                    const txtFilename = txtPath.replace(/^.*[\\/]/, ''); // 防止路径遍历攻击
+
+                    // 验证文件名安全
+                    if (!txtFilename || /\.\.|\//.test(txtFilename)) {
+                        throw new Error('无效的文件名格式');
+                    }
+
+                    const contentResponse = await fetch(`/get_txt_content/${encodeURIComponent(txtFilename)}`);
+
+                    // HTTP错误处理
+                    if (!contentResponse.ok) {
+                        throw new Error(`内容获取失败! 状态码: ${contentResponse.status}`);
+                    }
+
+                    const contentData = await contentResponse.json();
+
+                    // 业务逻辑错误处理
+                    if (contentData.status !== 'success') {
+                        throw new Error(contentData.message || '获取内容失败');
+                    }
+
+                    // 3. 显示结果
+                    txtContentDiv.textContent = contentData.content;
+                    successMsg.textContent = `报告生成成功: ${txtFilename}`;
+                    successMsg.style.display = 'block';
+
+                } catch (error) {
+                    // 统一错误处理
+                    errorMsg.textContent = `错误: ${error.message}`;
+                    errorMsg.style.display = 'block';
+                    console.error('API请求失败:', error);
+                } finally {
+                    loader.style.display = 'none';
+                }
+            }
+            window.addEventListener('DOMContentLoaded', () => {
+                const processBtn = document.getElementById('processBtn');
+                if (processBtn) {
+                    processBtn.addEventListener('click', fetchTxtContent);
+                } else {
+                    console.error('⚠️ 未找到 ID 为 "process-btn" 的按钮元素');
+                }
+            });
+
+            // 验证邮箱格式
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            // 显示错误信息
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            }
+
+            // 显示加载状态
+            function showLoader() {
+                loader.style.display = 'block';
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+                processBtn.disabled = true;
+            }
+
+
+
+        </script>

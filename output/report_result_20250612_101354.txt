@@ -1,0 +1,14 @@
+{
+  "email": "agentTest0514@163.com",
+  "prompt": "请分类这些邮件并标记优先级",
+  "result": {
+    "status": "success",
+    "files": {
+      "text": "C:\\Users\\lusia\\Desktop\\email_agent\\output\\email_report_20250611_002643.txt",
+      "json": "C:\\Users\\lusia\\Desktop\\email_agent\\output\\email_report_20250611_002643.json",
+      "markdown": "C:\\Users\\lusia\\Desktop\\email_agent\\output\\email_report_20250611_002643.md",
+      "excel": "C:\\Users\\lusia\\Desktop\\email_agent\\output\\email_report_20250611_002643.xlsx"
+    },
+    "text_content": "\n\n```\n邮件处理结果：\n\n1. [高优先级] 周婉婷 - 第11周周报——周晓晓\n发件人类别：实验室合作伙伴\n内容分类：工作进展汇报\n处理建议：\n- 需在24小时内查阅详细实验数据\n- 重点检查机械臂控制算法改进方案\n- 准备下周组会讨论多模态BCI融合方向\n\n2. [高优先级] Vicky - 近期的期刊投递——同事 陈序\n发件人类别：合作期刊编辑\n内容分类：学术投稿机会\n处理建议：\n- 优先阅读附件中的Call for Papers\n- 评估与当前脑机接口研究的契合度\n- 3个工作日内回复意向\n\n3. 李芯钰 - [GitHub] A third-party OAuth application\n发件人类别：系统通知\n内容分类：账户安全提醒\n处理建议：\n- 立即验证OAuth应用授权合法性\n- 如非本人操作需在2小时内撤销授权\n- 建议启用双重验证\n\n4. 网易邮箱助手 - 担心错过重要邮件\n发件人类别：服务商通知\n内容分类：产品推广\n处理建议：\n- 可归档至「推广邮件」文件夹\n- 无需紧急处理\n\n5. 网易邮箱助手 - 邮件办公，如此轻松\n发件人类别：服务商通知\n内容分类：功能更新\n处理建议：\n- 留存为参考资料\n- 有空时了解新功能特性\n\n处理优先级说明：\n(1) 周报类需在接收后24小时内处理\n(2) 期刊投稿类建议72小时响应窗口\n(3) 安全类通知需立即验证（<2小时）\n(4) 推广类邮件可批量处理\n```"
+  }
+}
