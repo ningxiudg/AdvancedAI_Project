@@ -93,6 +93,20 @@
             box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
         }
 
+        #emailInput {
+            background-color: var(--card);
+            border: 1px solid var(--text);
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: border-color 0.3s;
+        }
+
+        #emailInput:focus {
+            outline: none;
+            border-color: var(--normal);
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
+        }
+
         .txt-content {
             background: var(--card);
             border: 1px solid var(--border);
@@ -460,18 +474,18 @@
         <div class="input-area">
             <div class="form-group">
                 <label for="emailInput">请输入邮箱Cookie</label>
-                <input type="text" id="emailInput" placeholder="example@domain.com">
+                <input type="text" id="emailInput">
             </div>
 
             <button class="btn btn-primary" id="processBtn">
                 <i class="fas fa-cogs"></i> 处理邮箱邮件
             </button>
 
-            <div class="error-message" id="errorMessage">
+            <div class="error-message" id="error-message">
                 <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
             </div>
 
-            <div class="success-message" id="successMessage">
+            <div class="success-message" id="success-message">
                 <i class="fas fa-check-circle"></i> 邮件处理完成！已成功分析 <span id="emailCount">5</span> 封邮件
             </div>
 
@@ -482,171 +496,139 @@
         </div>
 
 
-        <div class="report-container">
-            <div class="success-message" id="success-message"></div>
-            <div class="error-message" id="error-message"></div>
-            <pre id="txt-content" class="txt-content"></pre>
+        <div class="report-container" id="report-container">
+            <div id="markdown-content"></div>
         </div>
-
-
-
-
-
-
-
-        <script>
-            // DOM元素
-            const emailInput = document.getElementById('emailInput');
-            const processBtn = document.getElementById('processBtn');
-            const loader = document.getElementById('loader');
-            const errorMessage = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            const successMessage = document.getElementById('successMessage');
-            const emailCount = document.getElementById('emailCount');
-            const mailModal = document.getElementById('mailModal');
-            const markDoneBtn = document.getElementById('markDoneBtn');
-
-            // 邮件数据
-            let currentMailId = null;
-
-            // 初始化页面
-            document.addEventListener('DOMContentLoaded', () => {
-                // 绑定模态框事件
-                closeModalBtn.addEventListener('click', () => {
-                    mailModal.style.display = 'none';
-                });
-
-                markDoneBtn.addEventListener('click', () => {
-                    if (currentMailId) {
-                        markMailAsDone(currentMailId);
-                    }
-                });
-
-                // 点击模态框外部关闭
-                mailModal.addEventListener('click', (e) => {
-                    if (e.target === mailModal) {
-                        mailModal.style.display = 'none';
-                    }
-                });
-            });
-
-
-            // 刷新按钮
-            document.getElementById('refreshBtn').addEventListener('click', () => {
-                if (emailInput.value.trim()) {
-                    processBtn.click();
-                }
-            });
-            async function fetchTxtContent() {
-                const loader = document.getElementById('loader');
-                const errorMsg = document.getElementById('error-message');
-                const successMsg = document.getElementById('success-message');
-                const txtContentDiv = document.getElementById('txt-content');
-
-                // 重置UI状态
-                loader.style.display = 'block';
-                errorMsg.style.display = 'none';
-                successMsg.style.display = 'none';
-                txtContentDiv.innerHTML = '';
-
-                try {
-                    // 1. 生成报告请求
-                    const email = document.getElementById('emailInput').value.trim();
-                    // if (!email || !validateEmail(email)) {
-                        // throw new Error('邮箱格式不正确');
-                    // }
-
-                    const generateResponse = await fetch('http://127.0.0.1:5001/generate_reports', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            email: email,
-                            prompt: "请分类这些邮件并标记优先级"
-                        })
-                    });
-
-
-                    if (!generateResponse.ok) {
-                        const httpError = `HTTP错误! 状态码: ${generateResponse.status}`;
-                        throw new Error(httpError);
-                    }
-
-                    const generateData = await generateResponse.json();
-
-                    // 业务逻辑错误处理
-                    if (generateData.status !== 'success') {
-                        throw new Error(generateData.message || '报告生成失败');
-                    }
-
-                    // 2. 获取文本内容
-                    // 安全处理：从路径中提取文件名
-                    const txtPath = generateData.files.text;
-                    const txtFilename = txtPath.replace(/^.*[\\/]/, ''); // 防止路径遍历攻击
-
-                    // 验证文件名安全
-                    if (!txtFilename || /\.\.|\//.test(txtFilename)) {
-                        throw new Error('无效的文件名格式');
-                    }
-
-                    const contentResponse = await fetch(`/get_txt_content/${encodeURIComponent(txtFilename)}`);
-
-                    // HTTP错误处理
-                    if (!contentResponse.ok) {
-                        throw new Error(`内容获取失败! 状态码: ${contentResponse.status}`);
-                    }
-
-                    const contentData = await contentResponse.json();
-
-                    // 业务逻辑错误处理
-                    if (contentData.status !== 'success') {
-                        throw new Error(contentData.message || '获取内容失败');
-                    }
-
-                    // 3. 显示结果
-                    txtContentDiv.textContent = contentData.content;
-                    successMsg.textContent = `报告生成成功: ${txtFilename}`;
-                    successMsg.style.display = 'block';
-
-                } catch (error) {
-                    // 统一错误处理
-                    errorMsg.textContent = `错误: ${error.message}`;
-                    errorMsg.style.display = 'block';
-                    console.error('API请求失败:', error);
-                } finally {
-                    loader.style.display = 'none';
-                }
-            }
-            window.addEventListener('DOMContentLoaded', () => {
-                const processBtn = document.getElementById('processBtn');
-                if (processBtn) {
-                    processBtn.addEventListener('click', fetchTxtContent);
-                } else {
-                    console.error('⚠️ 未找到 ID 为 "process-btn" 的按钮元素');
-                }
-            });
-
-            // 验证邮箱格式
-            function validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return re.test(email);
-            }
-
-            // 显示错误信息
-            function showError(message) {
-                errorText.textContent = message;
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
-            }
-
-            // 显示加载状态
-            function showLoader() {
-                loader.style.display = 'block';
-                errorMessage.style.display = 'none';
-                successMessage.style.display = 'none';
-                processBtn.disabled = true;
-            }
-        </script>
     </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        const emailInput = document.getElementById('emailInput');
+        const processBtn = document.getElementById('processBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const loader = document.getElementById('loader');
+        const errorMsg = document.getElementById('error-message');
+        const successMsg = document.getElementById('success-message');
+        const reportContainer = document.getElementById('report-container');
+        const markdownContent = document.getElementById('markdown-content');
+
+        // 处理按钮点击事件
+        processBtn.addEventListener('click', fetchReport);
+
+        // 刷新按钮点击事件
+        refreshBtn.addEventListener('click', () => {
+            if (emailInput.value.trim()) {
+                fetchReport();
+            }
+        });
+
+        // 获取并处理报告
+        async function fetchReport() {
+            // 重置状态
+            resetMessages();
+            showLoader(true);
+
+            const email = emailInput.value.trim();
+
+            // 邮箱格式验证
+            // if (!email || !validateEmail(email)) {
+            //     showError('请输入有效的邮箱地址');
+            //     showLoader(false);
+            //     return;
+            // }
+
+            try {
+                // 1. 生成报告请求
+                const response = await fetch('http://127.0.0.1:5001/generate_reports', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        prompt: "请分类这些邮件并标记优先级"
+                    })
+                });
+
+                // 检查HTTP错误
+                if (!response.ok) {
+                    const httpError = `HTTP错误! 状态码: ${response.status}`;
+                    throw new Error(httpError);
+                }
+
+                const responseData = await response.json();
+
+                // 处理后端返回的业务错误
+                if (responseData.status !== 'success') {
+                    throw new Error(responseData.message || '报告生成失败');
+                }
+
+                // 2. 处理特殊情况：没有未读邮件
+                if (typeof responseData.data === 'string' && responseData.data.includes('暂无未读邮件')) {
+                    showReport(responseData.data);
+                    successMsg.textContent = responseData.data;
+                    successMsg.style.display = 'block';
+                    return;
+                }
+
+                // 3. 显示Markdown格式的报告
+                showReport(responseData.data);
+
+                // 4. 显示成功信息
+                successMsg.textContent = `处理成功！共处理 ${responseData.emails_processed} 封邮件`;
+                successMsg.style.display = 'block';
+
+            } catch (error) {
+                console.error('API请求失败:', error);
+                showError(`处理失败: ${error.message}`);
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // 显示报告内容（Markdown渲染）
+        function showReport(markdown) {
+            // 渲染Markdown为HTML
+            markdownContent.innerHTML = marked.parse(markdown);
+
+            // 显示报告容器
+            reportContainer.style.display = 'block';
+
+            // 添加一些自定义样式增强
+            document.querySelectorAll('#markdown-content h2').forEach(h2 => {
+                const titleText = h2.textContent;
+                if (titleText.includes('邮件')) {
+                    h2.innerHTML = titleText.replace('邮件', '<i class="fas fa-envelope"></i> 邮件');
+                }
+            });
+        }
+
+        // 重置消息状态
+        function resetMessages() {
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+        }
+
+        // 显示/隐藏加载指示器
+        function showLoader(show) {
+            loader.style.display = show ? 'block' : 'none';
+            processBtn.disabled = show;
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+        }
+
+        // 邮箱格式验证
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+    </script>
 </body>
+
+</html>
