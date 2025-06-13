@@ -14,23 +14,18 @@ CORS(app)  # 这将允许所有域的跨域请求
 # 初始化Flask应用
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
-CORS(
-    app,
-    origins=["http://192.168.43.157:5001"],
+CORS(app, origins=["http://192.168.43.157:5001"],
     methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     supports_credentials=True,
-    max_age=3600,
-)
-
+    max_age=3600)
 
 @app.after_request
 def after_request(response):
-    if "Connection" in response.headers:
-        del response.headers["Connection"]
-    response.headers["Connection"] = "keep-alive"
+    if 'Connection' in response.headers:
+        del response.headers['Connection']
+    response.headers['Connection'] = 'keep-alive'
     return response
-
 
 # OpenAI客户端配置
 client = OpenAI(
@@ -39,11 +34,12 @@ client = OpenAI(
 )
 
 # 配置参数
-PRIORITY_CONTACTS = ["合作期刊编辑", "实验室合作伙伴", "重要客户"]
+PRIORITY_CONTACTS = ["稿件接收", "实验室合作伙伴", "重要客户","项目进展"]
 OUTPUT_FORMATS = ["text", "markdown"]
-OUTPUT_DIR = "C:\\Users\\lusia\\Desktop\\email_agent\\output"  # 输出目录
-EMAIL_DATA = "mail\\export_163mails.xlsx"  # 邮件数据路径
-
+OUTPUT_DIR = "D:\\课程作业（研）\\高级人工智能\\email_agent\\AdvancedAI_Project-main\\output"#"C:\\Users\\lusia\\Desktop\\email_agent\\output"  # 输出目录
+EMAIL_DATA = (
+    "mail\\export_163mails.xlsx"  # 邮件数据路径
+)
 
 # 1. 创建前端路由
 @app.route("/")
@@ -88,14 +84,13 @@ def process_emails():
         print(f"Error processing emails: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 # 传输email_list
 @app.route("/generate_reports", methods=["POST"])
 def generate_reports():
     try:
         if not request.json:
             return jsonify({"status": "error", "message": "无效的JSON请求"}), 400
-
+        
         data = request.json
         email = data.get("email")
         cookie = data.get("email")
@@ -106,14 +101,12 @@ def generate_reports():
 
         # 判断是否收到“暂无未读邮件.”
         if isinstance(email_list, str) and email_list.strip() == "暂无未读邮件。":
-            return jsonify(
-                {
-                    "status": "success",
-                    "data": email_list,
-                    "format": "text",
-                    "emails_processed": 0,
-                }
-            )
+            return jsonify({
+                "status": "success",
+                "data": email_list,
+                "format": "text",
+                "emails_processed": 0
+            })
 
         # 正常处理邮件数据
         output_format = "markdown"  # 默认格式
@@ -126,37 +119,40 @@ def generate_reports():
         result_path = os.path.join(OUTPUT_DIR, result_filename)
 
         with open(result_path, "w", encoding="utf-8") as f:
-            f.write(
-                json.dumps(
-                    {"email": email, "prompt": prompt, "result": result},
-                    ensure_ascii=False,
-                    indent=2,
-                )
-            )
+            f.write(result)
 
         # 返回响应
-        return jsonify(
-            {
-                "status": "success",
-                "data": result,
-                "format": output_format,
-                "emails_processed": len(email_list),
-            }
-        )
+        return jsonify({
+            "status": "success",
+            "data": result,
+            "format": output_format,
+            "emails_processed": len(email_list)
+        })
 
     except Exception as e:
-        return (
-            jsonify(
-                {
-                    "status": "error",
-                    "message": f"处理失败: {str(e)}",
-                    "error_type": type(e).__name__,
-                }
-            ),
-            500,
-        )
+        return jsonify({
+            "status": "error",
+            "message": f"处理失败: {str(e)}",
+            "error_type": type(e).__name__
+        }), 500
 
 
+@app.route("/get_txt_content/<filename>")
+def get_txt_content(filename):
+    try:
+        if ".." in filename or filename.startswith("/"):
+            return jsonify({"status": "error", "message": "无效的文件路径"}), 400
+
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        if not os.path.exists(file_path):
+            return jsonify({"status": "error", "message": "文件不存在"}), 404
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        return jsonify({"status": "success", "filename": filename, "content": content})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # 3. 文件下载路由
@@ -229,65 +225,44 @@ def generate_all_reports(
 
 
 def load_saved_result(OUTPUT_DIR, target_email, target_prompt):
-    """
-    从 OUTPUT_DIR 中读取已保存的 report_result_*.txt 文件，筛选匹配的 result
-    :param OUTPUT_DIR: 结果保存目录
-    :param target_email: 请求中的邮箱
-    :param target_prompt: 请求中的 prompt
-    :return: 匹配的 result（字典）或 None（无匹配/读取失败）
-    """
-    # 筛选目录下所有符合命名规则的文件
     saved_files = [
-        f
-        for f in os.listdir(OUTPUT_DIR)
-        if f.startswith("report_result_") and f.endswith(".txt")
+        f for f in os.listdir(OUTPUT_DIR)
+        if f.startswith("report_result_") and f.endswith(".md")
     ]
     if not saved_files:
-        return None  # 无历史文件
+        return None
 
-    # 按时间戳倒序排序（优先取最新文件）
-    saved_files.sort(
-        reverse=True, key=lambda x: x.split("_")[2] + x.split("_")[3]
-    )  # 按时间戳排序
+    saved_files.sort(reverse=True, key=lambda x: x.split("_")[2] + x.split("_")[3])
 
     for filename in saved_files:
         file_path = os.path.join(OUTPUT_DIR, filename)
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                file_content = f.read()
-                data = json.loads(file_content)  # 解析文件内容
-
-                # 检查邮箱和 prompt 是否匹配（可根据业务调整匹配逻辑）
-                if (
-                    data.get("email") == target_email
-                    and data.get("prompt") == target_prompt
-                ):
-                    return data.get("result")  # 返回保存的 result
+                file_content = f.read().strip()
+                # 如果你还想做 email/prompt 匹配，可以解析旧文件名或保留部分元数据
+                return file_content  # 返回纯 Markdown 内容
         except Exception as e:
             print(f"读取历史文件失败：{filename}，错误：{str(e)}")
-    return None  # 无匹配文件或读取失败
+    return None
 
-
-def ask(
-    prompt: str, email_list: List[Dict], output_format: str = "markdown"
-) -> Union[str, Dict]:
+def ask(prompt: str, email_list: List[Dict], output_format: str = "markdown") -> Union[str, Dict]:
     """
     处理邮件列表并返回指定格式结果
-
+    
     :param prompt: 处理提示
     :param email_list: 邮件数据列表（格式如email.png所示）
     :param output_format: 输出格式（此处强制为markdown）
     :return: markdown格式字符串或包含错误信息的字典
     """
     try:
+        system_prompt = "你是一个专业的邮箱处理助手，请按照以下要求处理邮件:1. 自动标记来自重要联系人({PRIORITY_CONTACTS})或标有'紧急'的邮件为高优先级; 2. 根据内容相关性进一步分类; 3. 提供清晰的处理建议; 4.表明是否有附件。\n"
+        
         # 1. 预处理邮件数据
-        processed_emails = []
-        for email in email_list:
-            # 解析邮件数据
+        user_input = f"邮件内容：\n"
+        for idx, email in enumerate(email_list, 1):
             sender = email.get("发件人", "")
             subject = email.get("邮件标题", "无标题")
-            content = email.get("正文", "")
-            has_attachment = email.get("附件", False)
+            content = email.get("正文摘要", "")
             # 强制转换为字符串，防止 list 类型报错
             if isinstance(subject, list):
                 subject = " ".join(subject)
@@ -295,103 +270,44 @@ def ask(
                 content = " ".join(content)
             subject = str(subject)
             content = str(content)
+            user_input += f"邮件 {idx}:\n"
+            user_input += f"发件人: {sender}\n"
+            user_input += f"标题: {subject}\n"
+            user_input += f"正文摘要: {content}\n\n"
 
-            # 确定优先级
-            priority = "normal"
-            if "紧急" in subject or "紧急" in content:
-                priority = "high"
-            elif any(contact in sender for contact in PRIORITY_CONTACTS):
-                priority = "high"
-
-            # 分类邮件
-            category = classify_email(subject, content, sender)
-
-            # 生成处理建议
-            suggestion = generate_suggestion(priority, category)
-
-            processed_emails.append(
-                {
-                    "发件人": sender,
-                    "邮件标题": subject,
-                    "优先级": priority,
-                    "分类": category,
-                    "处理建议": suggestion,
-                    "正文摘要": summarize_content(content),
-                    "附件": "有" if has_attachment else "无",
-                }
+            #api
+            response = client.chat.completions.create(
+            model="deepseek-r1:671b",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input},
+            ],
+            temperature=0.6,
+            max_tokens=4096,
+            stream=False
             )
-
-        # 2. 生成markdown格式结果
-        markdown_output = f"# 邮件处理报告\n\n**处理提示**: {prompt}\n\n"
-        markdown_output += f"**处理邮件总数**: {len(processed_emails)}\n\n"
-
-        for idx, email in enumerate(processed_emails, 1):
-            markdown_output += f"## 邮件 {idx}: {email['邮件标题']}\n"
-            markdown_output += f"- **发件人**: {email['发件人']}\n"
-            markdown_output += f"- **优先级**: {email['优先级']}\n"
-            markdown_output += f"- **分类**: {email['分类']}\n"
-            markdown_output += f"- **附件**: {email['附件']}\n"
-            markdown_output += f"- **处理建议**: {email['处理建议']}\n"
-            markdown_output += f"\n**正文摘要**:\n{email['正文摘要']}\n\n"
-            markdown_output += "---\n\n"
-
-        return markdown_output
-
+            
+            suggestion = response.choices[0].message.content
+            # 分类邮件
+            # category = classify_email(subject, content, sender)
+            # suggestion = generate_suggestion(priority, category)
+            # processed_emails.append({
+            #     "处理建议": suggestion,
+            # })
+        
+        return suggestion
+        
     except Exception as e:
         return {
             "status": "error",
             "message": f"邮件处理失败: {str(e)}",
-            "error": str(e),
+            "error": str(e)
         }
-
-
-def classify_email(subject: str, content: str, sender: str) -> str:
-    """邮件分类逻辑"""
-    subject = subject.lower()
-    content = content.lower()
-
-    if "会议" in subject or "meeting" in subject:
-        return "会议相关"
-    elif "报告" in subject or "report" in subject:
-        return "工作报告"
-    elif "期刊" in subject or "paper" in subject or "call for papers" in content:
-        return "学术相关"
-    elif "ucas.ac.cn" in sender:
-        return "学校邮件"
-    elif (
-        "618" in subject
-        or "促销" in subject
-        or "天猫" in subject
-        or "淘宝" in subject
-        or "京东" in subject
-        or "拼多多" in subject
-        or "唯品会" in subject
-        or "苏宁易购" in subject
-    ):
-        return "商业广告"
-    else:
-        return "其他"
-
-
-def generate_suggestion(priority: str, category: str) -> str:
-    """生成处理建议"""
-    if priority == "high":
-        return "立即处理，24小时内回复"
-    elif category == "会议相关":
-        return "添加到日历并回复确认"
-    elif category == "工作报告":
-        return "阅读并归档"
-    elif category == "学术相关":
-        return "转发给相关研究人员并跟进"
-    elif category == "学校邮件":
-        return "学校邮件，请仔细阅读"
-    else:
-        return "标准处理，3个工作日内回复"
 
 
 def summarize_content(content: str, max_length: int = 100) -> str:
     """生成内容摘要"""
-    content = " ".join(content.split())  # 去除多余空白
+    content = ' '.join(content.split())  # 去除多余空白
     if len(content) <= max_length:
         return content
     return content[:max_length] + "..."
