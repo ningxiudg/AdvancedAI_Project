@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 import os
-import json
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +15,7 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 
 CORS(
     app,
-    origins=["http://192.168.43.157:5001"],
+    origins=["http://127.0.0.1:5001/"],
     methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     supports_credentials=True,
@@ -34,14 +33,15 @@ def after_request(response):
 
 # OpenAI客户端配置
 client = OpenAI(
-    base_url="https://uni-api.cstcloud.cn/v1",
-    api_key="e6f0f5790dd3c0050e0bba50d85204a5da3f0566df60014b21776f0eb680167f",
+    # base_url="https://uni-api.cstcloud.cn/v1",
+    base_url = "https://xxx",
+    api_key = "xxx"
 )
 
 # 配置参数
 PRIORITY_CONTACTS = ["稿件接收", "实验室合作伙伴", "重要客户", "项目进展"]
 OUTPUT_FORMATS = ["text", "markdown"]
-OUTPUT_DIR = "C:\\Users\\lusia\\Desktop\\email_agent\\output"  # "D:\\课程作业（研）\\高级人工智能\\email_agent\\AdvancedAI_Project-main\\output"  # 输出目录
+OUTPUT_DIR = "output"  # 输出目录
 EMAIL_DATA = "mail\\export_163mails.xlsx"  # 邮件数据路径
 
 
