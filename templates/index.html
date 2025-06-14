@@ -532,12 +532,6 @@
 
             const email = emailInput.value.trim();
 
-            // 邮箱格式验证
-            // if (!email || !validateEmail(email)) {
-            //     showError('请输入有效的邮箱地址');
-            //     showLoader(false);
-            //     return;
-            // }
 
             try {
                 // 1. 生成报告请求
@@ -591,7 +585,7 @@
         // 显示报告内容（Markdown渲染）
         function showReport(markdown) {
             // 渲染Markdown为HTML
-            markdownContent.innerHTML = marked.parse(markdown);
+            markdownContent.innerHTML = marked.parse(markdown, { breaks: true });
 
             // 显示报告容器
             reportContainer.style.display = 'block';
@@ -623,11 +617,7 @@
             errorMsg.style.display = 'block';
         }
 
-        // 邮箱格式验证
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
+
     </script>
 </body>
 
