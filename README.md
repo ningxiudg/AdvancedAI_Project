@@ -26,15 +26,15 @@ def open_browser_with_cookies(cookie):
     # driver_path = "xxx/xxx/chromedriver.exe"
 ```
 
-4. adapt your base_url、api_key and model
+4. Adapt your base_url, api_key and model
 ```python
 # backend.py
-#Modify to your url and key
+# Modify to your url and key
 client = OpenAI(
     base_url="https://...",
     api_key="xxx",
 )
-#def ask(): modify “deepseek-r1:671b” to your model
+# def ask(): modify "deepseek-r1:671b" to your model
 model="deepseek-r1:671b",
 ```
 
